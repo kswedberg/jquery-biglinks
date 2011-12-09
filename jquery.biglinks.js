@@ -1,7 +1,7 @@
 /*!
  * jQuery Big Links plugin v1.1
  *
- * Date: Wed Dec 29 09:35:09 2010 EST
+ * Date: Fri Dec 09 16:39:51 2011 EST
  * Requires: jQuery v1.3.2+
  *
  * Copyright 2010, Karl Swedberg
@@ -20,32 +20,56 @@ if (typeof $.fn.biglinks === 'function') { return; }
 
 // biglinks plugin
 $.fn.biglinks = function(options) {
-  var opts = $.extend({}, $.fn.biglinks.defaults, options || {});
+  var opts = $.fn.biglinks.defaults,
+      meth = 'init';
 
-  this.each(function() {
-    var $container = $(this);
-    // skip this container if it doesn't have a link
-    if ( !$container.find('a').length ) { return; }
+  if (typeof options == 'string') {
+    meth = options;
+  } else {
+    opts = $.extend({}, opts, options || {});
+  }
 
-    $container.addClass(opts.biglinkClass);
+  var methods = {
+    init: function() {
+      this.each(function() {
+        var $container = $(this);
+        // skip this container if it doesn't have a link
+        if ( !opts.link.call(this).length ) {
+          return;
+        }
 
-    $container.bind('click.biglinks', function(event) {
-      var $firstLink = $(this).find('a:visible').eq(0);
+        $container.addClass(opts.biglinkClass);
 
-      if (opts.preventDefault === true) {
-        event.preventDefault();
-        $firstLink.trigger('click');
-      } else if ( !$(event.target).closest('a').length ) {
-        window.location.href = $firstLink[0].href;
-      }
+        $container.bind('click.biglinks', function(event) {
+          var $link = opts.link.call(this),
+              link = $link[0];
 
-    });
+          if (opts.preventDefault) {
+            event.preventDefault();
+          }
+          if ( !$(event.target).closest('a').length && link.href ) {
 
-    $container.bind('mouseenter.biglinks mouseleave.biglinks', function(event) {
-      $(this).toggleClass(opts.biglinkHoverClass, event.type === 'mouseenter');
-    });
+            if (opts.preventDefault === true) {
+              $link.trigger('click');
+            } else {
+              window.location.href = link.href;
+            }
+          }
+        });
 
-  });
+        $container.bind('mouseenter.biglinks mouseleave.biglinks', function(event) {
+          $(this).toggleClass(opts.biglinkHoverClass, event.type === 'mouseenter');
+        });
+      });
+    },
+    destroy: function() {
+      this.unbind('.biglinks').removeClass(opts.biglinkClass).removeClass(opts.biglinkHoverClass);
+    }
+  };
+
+  if ( methods[ meth ] ) {
+    methods[ meth ].apply(this);
+  }
 
   return this;
 };
@@ -54,7 +78,10 @@ $.fn.biglinks = function(options) {
 $.fn.biglinks.defaults = {
   preventDefault: false,
   biglinkClass: 'biglink',
-  biglinkHoverClass: 'biglink-hover'
+  biglinkHoverClass: 'biglink-hover',
+  link: function() {
+    return $(this).find('a').eq(0);
+  }
 };
 
 })(jQuery);

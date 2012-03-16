@@ -1,7 +1,7 @@
 /*!
- * jQuery Big Links plugin v1.1
+ * jQuery Big Links plugin v1.2
  *
- * Date: Fri Dec 09 16:39:51 2011 EST
+ * Date: Fri Mar 16 10:15:28 2012 EDT
  * Requires: jQuery v1.3.2+
  *
  * Copyright 2010, Karl Swedberg
@@ -19,38 +19,45 @@
 if (typeof $.fn.biglinks === 'function') { return; }
 
 // biglinks plugin
-$.fn.biglinks = function(options) {
+// first argument is options map or method name string.
+// If method name string, then 2nd argument can be used as options map
+$.fn.biglinks = function(options, methodOpts) {
   var opts = $.fn.biglinks.defaults,
-      meth = 'init';
+      meth = 'init',
+      slice = Array.prototype.slice;
 
   if (typeof options == 'string') {
     meth = options;
-  } else {
-    opts = $.extend({}, opts, options || {});
+    options = methodOpts;
   }
 
+  opts = $.extend({}, opts, options || {});
+
   var methods = {
-    init: function() {
+    init: function(iOpts) {
+      var o = $.extend({}, opts, iOpts || {});
+
       this.each(function() {
         var $container = $(this);
+        var $link = o.link.call(this);
+        var link = $link[0];
+
         // skip this container if it doesn't have a link
-        if ( !opts.link.call(this).length ) {
+        if ( !link ) {
           return;
         }
 
-        $container.addClass(opts.biglinkClass);
+        $container.addClass(o.biglinkClass);
 
         $container.bind('click.biglinks', function(event) {
-          var $link = opts.link.call(this),
-              link = $link[0];
 
-          if (opts.preventDefault) {
+          if (o.preventDefault) {
             event.preventDefault();
           }
           if ( !$(event.target).closest('a').length && link.href ) {
 
-            if (opts.preventDefault === true) {
-              $link.trigger('click');
+            if (o.preventDefault === true) {
+              $link.triggerHandler('click');
             } else {
               window.location.href = link.href;
             }
@@ -58,17 +65,18 @@ $.fn.biglinks = function(options) {
         });
 
         $container.bind('mouseenter.biglinks mouseleave.biglinks', function(event) {
-          $(this).toggleClass(opts.biglinkHoverClass, event.type === 'mouseenter');
+          $(this).toggleClass(o.biglinkHoverClass, event.type === 'mouseenter');
         });
       });
     },
-    destroy: function() {
-      this.unbind('.biglinks').removeClass(opts.biglinkClass).removeClass(opts.biglinkHoverClass);
+    destroy: function(dOpts) {
+      var o = $.extend({}, opts, dOpts || {});
+      this.unbind('.biglinks').removeClass(o.biglinkClass).removeClass(o.biglinkHoverClass);
     }
   };
 
   if ( methods[ meth ] ) {
-    methods[ meth ].apply(this);
+    methods[ meth ].apply( this, slice.call(arguments, 1) );
   }
 
   return this;

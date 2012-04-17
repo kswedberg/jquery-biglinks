@@ -41,11 +41,16 @@ $.fn.biglinks = function(options, methodOpts) {
         var $container = $(this);
         var $link = o.link.call(this);
         var link = $link[0];
+        var biglinked = $link.data('biglink');
 
         // skip this container if it doesn't have a link
-        if ( !link ) {
+        // or if the link has already been "biglinked"
+        if ( !link || biglinked ) {
           return;
         }
+
+        // mark the container as "biglinked"
+        $link.data('biglink', true);
 
         $container.addClass(o.biglinkClass);
 
@@ -57,7 +62,7 @@ $.fn.biglinks = function(options, methodOpts) {
           if ( !$(event.target).closest('a').length && link.href ) {
 
             if (o.preventDefault === true) {
-              $link.triggerHandler('click');
+              $link.trigger('click');
             } else {
               window.location.href = link.href;
             }
@@ -71,8 +76,22 @@ $.fn.biglinks = function(options, methodOpts) {
     },
     destroy: function(dOpts) {
       var o = $.extend({}, opts, dOpts || {});
-      this.unbind('.biglinks').removeClass(o.biglinkClass).removeClass(o.biglinkHoverClass);
+      this.each(function() {
+        var linked,
+            $link = o.link.call(this);
+
+        $link.removeData('biglink');
+        linked = $(this).find('a').filter(function() {
+          return !!$(this).data('biglink');
+        }).length;
+
+        if (!linked) {
+          $(this).unbind('.biglinks').removeClass(o.biglinkClass).removeClass(o.biglinkHoverClass);
+        }
+
+      });
     }
+
   };
 
   if ( methods[ meth ] ) {
